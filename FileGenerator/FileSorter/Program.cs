@@ -1,6 +1,8 @@
 ﻿using System.Text;
 using BenchmarkDotNet.Attributes;
 
+namespace FileSorter;
+
 public class FileSorter
 {
     private const string InputFileName = @"C:\src\FileSorter\FileGenerator\FileGenerator\bin\Debug\net7.0\test.txt";
@@ -10,20 +12,19 @@ public class FileSorter
 
     private const int MaxBuffer = 10485760; // 1MB 
 
-    static public void Main()
-    {        
+    public static void Main()
+    {
         var sort = new FileSorter();
         sort.Splitter();
     }
-
-    [Benchmark]
-    public  void Splitter()
+    
+    public void Splitter()
     {
         using var fs = new FileStream(InputFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-        long remainBytes = fs.Length;
-        long partition = 0;
-        long numberOfLines = 0;
+        var remainBytes = fs.Length;
+        var partition = 0;
+        var numberOfLines = 0L;
         var sortedFiles = new List<string>();
 
         while (remainBytes > 0)
@@ -45,7 +46,7 @@ public class FileSorter
             {
                 var str = System.Text.Encoding.UTF8.GetString(buffer);
                 var strReader = new StringReader(str);
-                string line = "start";
+                var line = "start";
 
                 var strList = new List<string>();
 
@@ -70,7 +71,7 @@ public class FileSorter
                 var fileName = $"sorted_{partition}.txt";
                 sortedFiles.Add(fileName);
 
-                using (StreamWriter writetext = new StreamWriter(fileName))
+                using (var writetext = new StreamWriter(fileName))
                 {
                     foreach (var row in strList)
                     {
@@ -85,7 +86,7 @@ public class FileSorter
         }
 
         //Merge files
-        using (StreamWriter writetext = new StreamWriter(OutputFileName))
+        using (var writetext = new StreamWriter(OutputFileName))
         {
             var strReaderRows = new List<ReaderRow>();
 
@@ -109,6 +110,7 @@ public class FileSorter
                 {
                     str.Reader.Close();
                 }
+
                 k++;
             }
         }
@@ -122,12 +124,12 @@ public class FileSorter
 
     public static string ReturnCleanASCII(string s)
     {
-        StringBuilder sb = new StringBuilder(s.Length);
-        foreach (char c in s)
+        var sb = new StringBuilder(s.Length);
+        foreach (var c in s)
         {
-            if ((int) c > 127) // you probably don't want 127 either
+            if (c > 127) // you probably don't want 127 either
                 continue;
-            if ((int) c < 32) // I bet you don't want control characters 
+            if (c < 32) // I bet you don't want control characters 
                 continue;
             if (c == '%')
                 continue;
@@ -137,41 +139,5 @@ public class FileSorter
         }
 
         return sb.ToString();
-    }
-}
-
-public class StringSorter : IComparer<string>
-{
-    public int Compare(string s1, string s2)
-    {
-        string[] parts1 = s1.Split(new char[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
-        string[] parts2 = s2.Split(new char[] { '.' }, StringSplitOptions.RemoveEmptyEntries);
-
-        string string1 = parts1.Length > 1 ? parts1[1].TrimStart() : string.Empty;
-        string string2 = parts2.Length > 1 ? parts2[1].TrimStart() : string.Empty;
-
-        int result = string.Compare(string1, string2, StringComparison.Ordinal);
-        if (result == 0 && parts1.Length > 0 && parts2.Length > 0)
-        {
-            double number1, number2;
-            if (double.TryParse(parts1[0], out number1) && double.TryParse(parts2[0], out number2))
-            {
-                return number1.CompareTo(number2);
-            }
-        }
-
-        return result;
-    }
-}
-
-public class ReaderRow
-{
-    public string Row { get; set; }
-    public StreamReader Reader { get; set; }
-
-    public ReaderRow(string row, StreamReader reader)
-    {
-        Row = row;
-        Reader = reader;
     }
 }
