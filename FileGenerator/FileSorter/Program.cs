@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Diagnostics;
+using System.Text;
 using BenchmarkDotNet.Attributes;
 
 namespace FileSorter;
@@ -16,14 +17,17 @@ public class FileSorter
     // private const int MaxBuffer = 10485760; // 10MB 
     private const int MaxBuffer = 1048576; // 1MB 
     private long _numberOfLines { get; set; } = 0;
-    private List<string> _sortedFiles { get; set; } = new();
+    private List<string> _unsortedFiles { get; set; } = new();
 
     public static void Main()
     {
+        Stopwatch sw = Stopwatch.StartNew();
         var sort = new FileSorter();
         sort.Splitter();
         sort.Merge();
         sort.DeleteTempFile();
+        sw.Stop();
+        Console.WriteLine(sw.Elapsed);
     }
 
     public void Splitter()
@@ -67,23 +71,29 @@ public class FileSorter
 
                 line = strReader.ReadLine();
             }
-
-            //Sort each file
+            
             strList.Sort(new StringSorter());
-
-            var fileName = $"sorted_{partition}.txt";
-            _sortedFiles.Add(fileName);
-
-            using (var writetext = new StreamWriter(fileName))
-            {
-                foreach (var row in strList)
-                {
-                    writetext.WriteLine(row);
-                }
-            }
+            
+            var fileName = $"unsorted_{partition}.txt";
+            _unsortedFiles.Add(fileName);
+            File.WriteAllLines(fileName, strList);
 
             partition++;
         }
+    }
+
+    public async void SortFiles()
+    {
+        await Task.Run(() =>
+            {
+                var strList = new List<string>();
+                
+                strList.Sort(new StringSorter());
+            }
+
+        );
+        //Sort each file
+        // 
     }
 
     public void Merge()
@@ -94,7 +104,7 @@ public class FileSorter
             var strReaderRows = new List<ReaderRow>();
 
             //get first row
-            foreach (var file in _sortedFiles)
+            foreach (var file in _unsortedFiles)
             {
                 var strReader = new StreamReader(file);
                 strReaderRows.Add(new ReaderRow(strReader.ReadLine(), strReader));
@@ -121,7 +131,7 @@ public class FileSorter
 
     private void DeleteTempFile()
     {
-        foreach (var fileName in _sortedFiles)
+        foreach (var fileName in _unsortedFiles)
         {
             File.Delete(fileName);
         }
