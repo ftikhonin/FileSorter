@@ -1,29 +1,31 @@
-﻿public class StringSorter : IComparer<string>
+﻿namespace FileSorter;
+
+public class StringSorter : IComparer<string>
 {
     public int Compare(string s1, string s2)
     {
-        var result = 0;
         if (s1 is not null && s2 is not null && s1.Contains('.') && s2.Contains('.'))
         {
-            string[] parts1 = s1.Split(new[] {'.'}, StringSplitOptions.RemoveEmptyEntries);
-            string[] parts2 = s2.Split(new[] {'.'}, StringSplitOptions.RemoveEmptyEntries);
+            ReadOnlySpan<char> span1 = s1.AsSpan();
+            ReadOnlySpan<char> span2 = s2.AsSpan();
 
-            string string1 = parts1.Length > 1 ? parts1[1].TrimStart() : string.Empty;
-            string string2 = parts2.Length > 1 ? parts2[1].TrimStart() : string.Empty;
+            var index = span1.IndexOf('.');
+            var number1 = double.Parse(span1.Slice(0, index));
+            var string1 = span1.Slice(index + 1).TrimStart().ToString();
 
-            result = string.Compare(string1, string2, StringComparison.Ordinal);
-            if (result == 0 && parts1.Length > 0 && parts2.Length > 0)
+            index = span2.IndexOf('.');
+            var number2 = double.Parse(span2.Slice(0, index));
+            var string2 = span2.Slice(index + 1).TrimStart().ToString();
+
+            var result = string.Compare(string1, string2, StringComparison.OrdinalIgnoreCase);
+            if (result == 0)
             {
-                double number1, number2;
-                if (double.TryParse(parts1[0], out number1) && double.TryParse(parts2[0], out number2))
-                {
-                    return number1.CompareTo(number2);
-                }
+                return number1.CompareTo(number2);
             }
 
             return result;
         }
 
-        return string.Compare(s1 ?? "", s2 ?? "", StringComparison.Ordinal);
+        return string.Compare(s1 ?? "", s2 ?? "", StringComparison.OrdinalIgnoreCase);
     }
 }
