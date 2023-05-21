@@ -4,28 +4,20 @@ public class StringSorter : IComparer<string>
 {
     public int Compare(string s1, string s2)
     {
-        if (s1 is not null && s2 is not null && s1.Contains('.') && s2.Contains('.'))
-        {
-            ReadOnlySpan<char> span1 = s1.AsSpan();
-            ReadOnlySpan<char> span2 = s2.AsSpan();
+        if (s1 is null || s2 is null)
+            return string.CompareOrdinal(s1 ?? "", s2 ?? "");
 
-            var index = span1.IndexOf('.');
-            var number1 = double.Parse(span1.Slice(0, index));
-            var string1 = span1.Slice(index + 1).TrimStart().ToString();
+        var index1 = s1.IndexOf('.');
+        var index2 = s2.IndexOf('.');
 
-            index = span2.IndexOf('.');
-            var number2 = double.Parse(span2.Slice(0, index));
-            var string2 = span2.Slice(index + 1).TrimStart().ToString();
+        if (index1 == -1 || index2 == -1)
+            return string.CompareOrdinal(s1 ?? "", s2 ?? "");
 
-            var result = string.CompareOrdinal(string1, string2);
-            if (result == 0)
-            {
-                return number1.CompareTo(number2);
-            }
+        var number1 = long.Parse(s1[..index1]);
 
-            return result;
-        }
+        var number2 = long.Parse(s2[..index2]);
 
-        return string.CompareOrdinal(s1 ?? "", s2 ?? "");
+        var result = string.CompareOrdinal(s1[(index1 + 1)..].TrimStart(), s2[(index2 + 1)..].TrimStart());
+        return result == 0 ? number1.CompareTo(number2) : result;
     }
 }
