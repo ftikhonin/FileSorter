@@ -5,27 +5,30 @@ namespace FileSorter;
 
 public class FileSorter
 {
-    private const string InputFileName = @"C:\src\FileSorter\FileGenerator\FileGenerator\bin\Debug\net7.0\test.txt";
-
+    private const string InputFileName = 
+        // @"C:\src\FileSorter\FileGenerator\FileGenerator\bin\Debug\net7.0\test.txt";
+        @"test.txt";
     private const string OutputFileName =
-        @"C:\src\FileSorter\FileGenerator\FileGenerator\bin\Debug\net7.0\output.txt";
+        // @"C:\src\FileSorter\FileGenerator\FileGenerator\bin\Debug\net7.0\output.txt";
+        @"output.txt";
 
     private const int MaxBuffer = 10485760; // 1MB 
+    private long _numberOfLines { get; set; } = 0;
+    private List<string> _sortedFiles { get; set; } = new();
 
     public static void Main()
     {
         var sort = new FileSorter();
         sort.Splitter();
+        sort.Merge();
     }
-    
+
     public void Splitter()
     {
         using var fs = new FileStream(InputFileName, FileMode.Open, FileAccess.Read, FileShare.Read);
 
         var remainBytes = fs.Length;
         var partition = 0;
-        var numberOfLines = 0L;
-        var sortedFiles = new List<string>();
 
         while (remainBytes > 0)
         {
@@ -44,12 +47,11 @@ public class FileSorter
 
             if (readBytes > 0)
             {
-                var str = System.Text.Encoding.UTF8.GetString(buffer);
-                var strReader = new StringReader(str);
+                var strReader = new StringReader(Encoding.UTF8.GetString(buffer));
                 var line = "start";
 
                 var strList = new List<string>();
-
+                //Убрать вот этот цикл с чтением из буффера и сразу при чтении из файла писать в файл
                 while (!string.IsNullOrWhiteSpace(line))
                 {
                     line = strReader.ReadLine();
@@ -60,7 +62,7 @@ public class FileSorter
                         if (!string.IsNullOrWhiteSpace(line))
                         {
                             strList.Add(line);
-                            numberOfLines++;
+                            _numberOfLines++;
                         }
                     }
                 }
@@ -69,7 +71,7 @@ public class FileSorter
                 strList.Sort(new StringSorter());
 
                 var fileName = $"sorted_{partition}.txt";
-                sortedFiles.Add(fileName);
+                _sortedFiles.Add(fileName);
 
                 using (var writetext = new StreamWriter(fileName))
                 {
@@ -84,14 +86,17 @@ public class FileSorter
 
             remainBytes -= readBytes;
         }
+    }
 
+    public void Merge()
+    {
         //Merge files
         using (var writetext = new StreamWriter(OutputFileName))
         {
             var strReaderRows = new List<ReaderRow>();
 
             //get first row
-            foreach (var file in sortedFiles)
+            foreach (var file in _sortedFiles)
             {
                 var strReader = new StreamReader(file);
                 strReaderRows.Add(new ReaderRow(strReader.ReadLine(), strReader));
@@ -100,7 +105,7 @@ public class FileSorter
             // get minimal value
             // k-way merge
             var k = 0L;
-            while (k < numberOfLines)
+            while (k < _numberOfLines)
             {
                 strReaderRows.Sort((row1, row2) => new StringSorter().Compare(row1.Row, row2.Row));
                 var str = strReaderRows.First(x => !string.IsNullOrWhiteSpace(x.Row));
@@ -116,7 +121,7 @@ public class FileSorter
         }
 
         //delete temp files
-        foreach (var fileName in sortedFiles)
+        foreach (var fileName in _sortedFiles)
         {
             File.Delete(fileName);
         }
