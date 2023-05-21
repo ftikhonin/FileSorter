@@ -12,7 +12,8 @@ public class FileSorter
         // @"C:\src\FileSorter\FileGenerator\FileGenerator\bin\Debug\net7.0\output.txt";
         @"output.txt";
 
-    private const int MaxBuffer = 10485760; // 1MB 
+    // private const int MaxBuffer = 10485760; // 10MB 
+    private const int MaxBuffer = 1048576; // 1MB 
     private long _numberOfLines { get; set; } = 0;
     private List<string> _sortedFiles { get; set; } = new();
 
@@ -21,6 +22,7 @@ public class FileSorter
         var sort = new FileSorter();
         sort.Splitter();
         sort.Merge();
+        // sort.DeleteTempFile();
     }
 
     public void Splitter()
@@ -120,6 +122,11 @@ public class FileSorter
             }
         }
 
+
+    }
+
+    private void DeleteTempFile()
+    {
         //delete temp files
         foreach (var fileName in _sortedFiles)
         {
