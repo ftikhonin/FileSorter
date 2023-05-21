@@ -10,7 +10,7 @@ namespace FileSorter;
 
 public class FileSorter
 {
-    private const string InputFileName = @"test100_1.txt";
+    private const string InputFileName = @"test.txt";
     private const string OutputFileName = @"output.txt";
     private const int MaxBuffer = 268435456; // 256MB
 
