@@ -5,9 +5,10 @@ namespace FileSorter;
 
 public class FileSorter
 {
-    private const string InputFileName = 
+    private const string InputFileName =
         // @"C:\src\FileSorter\FileGenerator\FileGenerator\bin\Debug\net7.0\test.txt";
         @"test.txt";
+
     private const string OutputFileName =
         // @"C:\src\FileSorter\FileGenerator\FileGenerator\bin\Debug\net7.0\output.txt";
         @"output.txt";
@@ -22,7 +23,7 @@ public class FileSorter
         var sort = new FileSorter();
         sort.Splitter();
         sort.Merge();
-        // sort.DeleteTempFile();
+        sort.DeleteTempFile();
     }
 
     public void Splitter()
@@ -31,62 +32,57 @@ public class FileSorter
 
         var remainBytes = fs.Length;
         var partition = 0;
-
+        var strReader = new StreamReader(InputFileName);
+        var strList = new List<string>();
         while (remainBytes > 0)
         {
-            var buffer = new byte[MaxBuffer + MaxBuffer / 100 * 10]; //add 10 percent for max buffer size
+            strList.Clear();
             var readBytes = 0L;
-            byte bt = 0;
-            while (readBytes < MaxBuffer || bt != '\n')
+            var line = strReader.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(line))
             {
-                var b = fs.ReadByte();
-                if (b == -1) //Reached end of file
+                break;
+            }
+
+            while (!string.IsNullOrWhiteSpace(line))
+            {
+                line = ReturnCleanASCII(line);
+
+                var byteCountLine = Encoding.ASCII.GetByteCount(line);
+                readBytes += byteCountLine;
+                remainBytes -= byteCountLine;
+
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    strList.Add(line);
+                    _numberOfLines++;
+                }
+
+
+                if (readBytes > MaxBuffer)
+                {
                     break;
-                bt = (byte) b;
-                buffer[readBytes] = bt;
-                readBytes++;
+                }
+
+                line = strReader.ReadLine();
             }
 
-            if (readBytes > 0)
+            //Sort each file
+            strList.Sort(new StringSorter());
+
+            var fileName = $"sorted_{partition}.txt";
+            _sortedFiles.Add(fileName);
+
+            using (var writetext = new StreamWriter(fileName))
             {
-                var strReader = new StringReader(Encoding.UTF8.GetString(buffer));
-                var line = "start";
-
-                var strList = new List<string>();
-                //Убрать вот этот цикл с чтением из буффера и сразу при чтении из файла писать в файл
-                while (!string.IsNullOrWhiteSpace(line))
+                foreach (var row in strList)
                 {
-                    line = strReader.ReadLine();
-                    if (line is not null)
-                    {
-                        line = ReturnCleanASCII(line);
-
-                        if (!string.IsNullOrWhiteSpace(line))
-                        {
-                            strList.Add(line);
-                            _numberOfLines++;
-                        }
-                    }
+                    writetext.WriteLine(row);
                 }
-
-                //Sort each file
-                strList.Sort(new StringSorter());
-
-                var fileName = $"sorted_{partition}.txt";
-                _sortedFiles.Add(fileName);
-
-                using (var writetext = new StreamWriter(fileName))
-                {
-                    foreach (var row in strList)
-                    {
-                        writetext.WriteLine(row);
-                    }
-                }
-
-                partition++;
             }
 
-            remainBytes -= readBytes;
+            partition++;
         }
     }
 
@@ -121,13 +117,10 @@ public class FileSorter
                 k++;
             }
         }
-
-
     }
 
     private void DeleteTempFile()
     {
-        //delete temp files
         foreach (var fileName in _sortedFiles)
         {
             File.Delete(fileName);
