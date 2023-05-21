@@ -17,7 +17,7 @@ public class StringSorter : IComparer<string>
             var number2 = double.Parse(span2.Slice(0, index));
             var string2 = span2.Slice(index + 1).TrimStart().ToString();
 
-            var result = string.Compare(string1, string2, StringComparison.OrdinalIgnoreCase);
+            var result = string.CompareOrdinal(string1, string2);
             if (result == 0)
             {
                 return number1.CompareTo(number2);
@@ -26,6 +26,6 @@ public class StringSorter : IComparer<string>
             return result;
         }
 
-        return string.Compare(s1 ?? "", s2 ?? "", StringComparison.OrdinalIgnoreCase);
+        return string.CompareOrdinal(s1 ?? "", s2 ?? "");
     }
 }
