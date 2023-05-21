@@ -1,4 +1,6 @@
-﻿public class ReaderRow
+﻿using System.IO;
+
+public class ReaderRow
 {
     public string Row { get; set; }
     public StreamReader Reader { get; set; }

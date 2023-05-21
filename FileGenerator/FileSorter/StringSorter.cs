@@ -1,4 +1,6 @@
-﻿namespace FileSorter;
+﻿using System.Collections.Generic;
+
+namespace FileSorter;
 
 public class StringSorter : IComparer<string>
 {
